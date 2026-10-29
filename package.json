@@ -1,7 +1,7 @@
 {
   "name": "dsh-peer-chat",
   "version": "2.1.0",
-  "description": "DSH 三合一插件：本地会话工具（vendor session-tools）+ 预设建会话/插话（vendor session-plus）+ 跨 DSH 实例对话 peer_*。",
+  "description": "Talk to another DSH instance: local session tools + preset spawn/steer + cross-instance peer_* tools. 跨 DSH 实例对话：本地会话工具 + 预设建会话/插话 + peer_* 跨端工具。",
   "license": "Apache-2.0",
   "type": "module",
   "main": "index.js",
@@ -23,8 +23,11 @@
     "locale",
     "scripts",
     "docs",
+    "site",
     "README.md",
+    "README.zh-CN.md",
     "INSTALL.md",
+    "INSTALL.zh-CN.md",
     "LICENSE"
   ],
   "dsh": {
