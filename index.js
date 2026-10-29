@@ -1963,7 +1963,7 @@ function registerPanelRoute(ctx, config) {
 // ── 插件本体 ────────────────────────────────────────────────
 
 export async function apply(ctx, config = {}) {
-  // ── 三合一：把 vendor 进来的 session-tools（本地会话工具）与本插件的 peer_* 挂在一起 ──
+  // ── 内置会话工具与本插件的 peer_* 一起挂载 ──
   // 这样只需安装本插件一行，就同时拥有：
   //   session_create / session_send / session_wait / list_sessions（vendor/session-tools，含审批链）
   //   peer_token / peer_ask / peer_tail（本文件）

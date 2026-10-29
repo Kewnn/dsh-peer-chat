@@ -9,8 +9,8 @@
 Each DSH process listens on its own port and knows nothing about its neighbours. This plugin connects them:
 send a message to another instance, wait for its reply, or talk into a turn that is already running.
 
-It is a single plugin with three layers built in — local session tools, preset/steering, and the cross-instance
-`peer_*` tools — so one install covers the whole path.
+The plugin carries everything the path needs: session creation, preset mounting and steering come with it, so one
+install is enough.
 
 ## Features
 
