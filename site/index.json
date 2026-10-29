@@ -27,12 +27,12 @@
       "versions": [
         {
           "version": "2.1.0",
-          "publishTimestamp": 1793250036,
+          "publishTimestamp": 1793250116,
           "license": "Apache-2.0",
           "source": {
             "type": "git",
             "url": "https://github.com/Kewnn/dsh-peer-chat",
-            "commit": "6e5b7bd6b7b9a4eda8d89776581435fe6e95ac35",
+            "commit": "177679378e346ea1b4d169c170b3cac3ac4f9f8d",
             "directory": "."
           },
           "engines": {
