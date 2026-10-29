@@ -1,24 +1,16 @@
-# Install (dsh-peer-chat)
+# Install
 
-Short version: **put the package under the profile's `local-plugins/`, wire it in with a `file:` dependency,
-add one patch row, restart.**
+**English** ｜ [中文](./INSTALL.zh-CN.md)　·　Back to [README](./README.md)
 
-Chinese: [INSTALL.zh-CN.md](./INSTALL.zh-CN.md)　｜　Overview: [README.md](./README.md)　｜　License: Apache-2.0
+One install path: **copy the package into the profile → declare it with a `file:` dependency → mount one patch
+row → restart.**
 
-## 0. Prerequisites
-
-- DSH `0.2.1-rc.4` (the package declares peers for the `0.2.1-rc` line)
-- Node ≥ 22.15 (the plugin uses `zlib` zstd)
-- Paths below are examples — adjust to your machine:
-  - checkout: `<checkout>`
-  - profile: `<DSH_HOME>\profiles\web`
-
-## 1. Place the files
+## 1. Copy the package
 
 ```
 <profile>\local-plugins\dsh-peer-chat\
   index.js  client.js  package.json  cordis.patch.yml  icon.svg
-  vendor\…                    ← built-in session layer and preset/steer layer
+  vendor\…                    built-in session layer and preset/steer layer
   README.md  INSTALL.md  LICENSE
 ```
 
@@ -26,10 +18,10 @@ Chinese: [INSTALL.zh-CN.md](./INSTALL.zh-CN.md)　｜　Overview: [README.md](./
 Copy-Item -Recurse .\dsh-peer-chat "$env:DSH_HOME\profiles\web\local-plugins\dsh-peer-chat"
 ```
 
-> ⚠️ Do **not** `link:` the package from outside the profile: its `@deepseek-ai/*` peers will not resolve and
-> the host only reports `did not activate / import failed`.
+Keep the package **inside** the profile. Mounting it from another directory via `link:` leaves its host
+dependencies unresolvable.
 
-## 2. Declare the dependency (`file:`)
+## 2. Declare the dependency
 
 `<profile>\package.json`:
 
@@ -41,15 +33,12 @@ Copy-Item -Recurse .\dsh-peer-chat "$env:DSH_HOME\profiles\web\local-plugins\dsh
 }
 ```
 
-Install — **stop the server first**, otherwise `node_modules` is locked and pnpm fails halfway:
+Install with the server stopped, so the module directory is not locked:
 
 ```powershell
-# 1) stop the instance on <port>
 Get-NetTCPConnection -LocalPort <port> -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
-# 2) install
 cd "$env:DSH_HOME\profiles\web"
-pnpm install --registry https://registry.npmmirror.com
-# 3) start again
+pnpm install
 & "<start script>" --no-open
 ```
 
@@ -63,71 +52,51 @@ Append to `<profile>\cordis.patch.yml`:
       name: dsh-peer-chat
 ```
 
-> If another plugin in your profile already provides `session_spawn`, add
-> `config: { mergeSessionPlus: false }` to this row — otherwise the tool is registered twice.
-
 ## 4. Restart
 
-Plugin modules load at startup — editing files (or tool schemas) requires a restart.
+Plugin modules load at startup; a restart is required after installing or updating.
 
-## 5. Smoke test (three steps)
+## 5. Verify
 
 ```
-① startup log has no "did not activate" / "import failed"
-② in any session ask: do you have peer_list / peer_ask / peer_send / session_spawn?  → all should exist
-③ peer_list({ scan: true }) lists live instances; peer_ask({ peer: <port>, message: 'ok' }) returns a reply
+① the startup log contains no "did not activate" / "import failed"
+② peer_list({ scan: true }) lists the peers that are actually running
+③ peer_ask({ peer: '<port>', message: 'ok' }) returns a reply
 ```
 
-## 6. Configuration (optional)
+## Configuration (optional)
 
 ```yaml
 - insert:
     - id: dsh-peer-chat
       name: dsh-peer-chat
       config:
-        peersFile: <peers.json>   # peer table
-        localHome: <DSH_HOME>                 # this instance's DSH_HOME (token discovery)
-        defaultWorkspace: <default workspace>
-        mergeSessionTools: true                          # mount the built-in local session tools
-        mergeSessionPlus: true                           # mount the built-in preset/steer layer
-        discoverPorts: [3080, <port>, 3100, <port>]          # optional: scan this list instead of 3000-3200
+        peersFile: <peers.json>          # peer table
+        localHome: <DSH_HOME>            # this instance's home, used for token discovery
+        defaultWorkspace: <workspace>    # fallback working directory for new sessions
+        discoverPorts: [3080, 3090, 3100, 3130]
 ```
 
-`peers.json` — key by **port** (recommended):
+Peer table — keys are ports:
 
 ```json
 {
-  "<port>": { "url": "http://127.0.0.1:<port>", "home": "<peer DSH_HOME>" },
-  "<port>": { "url": "http://127.0.0.1:<port>", "home": "<DSH_HOME>" }
+  "<port>": { "url": "http://127.0.0.1:<port>", "home": "<peer DSH_HOME>" }
 }
 ```
 
-## 7. Where the token comes from
+`home` lets the plugin read that peer's logs to find the current token. Without it the cached token is used.
 
-Priority: `config.token` / `PEER_TOKEN` → last `dsh web: …/?token=…` line in `<peer.home>/*.log` →
-cached token in `peers.json`. On 401 the log is rescanned and `peers.json` is updated.
-
-Make a peer log its startup output with `start-logged.cmd` (`tee` into `<home>\web-console.log`).
-
-## 8. Uninstall
-
-Three steps — skipping any of them leaves the plugin half-loaded:
+## Uninstall
 
 ```powershell
-# ① drop the dependency
 cd "$env:DSH_HOME\profiles\web"
 pnpm remove dsh-peer-chat
-# ② remove the "- id: dsh-peer-chat" insert block from cordis.patch.yml
-# ③ delete the installed copy
+# remove the "- id: dsh-peer-chat" insert block from cordis.patch.yml
 Remove-Item -Recurse -Force .\node_modules\dsh-peer-chat
 ```
 
-## 9. Troubleshooting
+## Requirements
 
-| Symptom | Cause |
-|---|---|
-| `did not activate / import failed` | linked from outside the profile, or dependencies not installed |
-| `session_spawn` registered twice | another plugin already provides it → set `mergeSessionPlus: false` |
-| HTTP 401 from a peer | stale token — let the peer log its startup, or pass `PEER_TOKEN` |
-| Whole web UI breaks, `client bundle not found` | `package.json` `files` list is missing `client.js` |
-| Sessions land in `sessions\_no-cwd`, UI says `session/not-found` | the session was created without a cwd (this plugin always passes one) |
+- Node ≥ 22.15
+- A recent DSH release (peer line `0.2.1-rc`)
