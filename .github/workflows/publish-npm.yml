@@ -1,0 +1,37 @@
+name: publish-npm
+
+# 手动触发：GitHub 的出口 IP 不会被 npm 当机器人，本地 VPN/IP 的风控绕开了。
+# 前提：仓库 Secrets 里配好 NPM_TOKEN（Automation 类型，绕过 2FA）。
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只演练不发布（npm publish --dry-run）'
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Show package identity
+        run: node -e "const p=require('./package.json');console.log(p.name+'@'+p.version)"
+
+      - name: Dry run
+        if: ${{ inputs.dry_run }}
+        run: npm publish --dry-run
+
+      - name: Publish
+        if: ${{ !inputs.dry_run }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
