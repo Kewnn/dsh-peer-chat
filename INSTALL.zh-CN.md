@@ -97,4 +97,9 @@ Remove-Item -Recurse -Force .\node_modules\dsh-peer-chat
 ## 环境要求
 
 - Node ≥ 22.15
-- 较新的 DSH 版本（peer 线 `0.2.1-rc`）
+
+| DSH 版本 | 支持情况 |
+|---|---|
+| `0.2.1-rc.2` | 支持 |
+| `0.2.1-rc.3` | 支持 |
+| `0.2.1-rc.4` | 支持（当前测试基线） |

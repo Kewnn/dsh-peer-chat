@@ -99,4 +99,9 @@ Remove-Item -Recurse -Force .\node_modules\dsh-peer-chat
 ## Requirements
 
 - Node ≥ 22.15
-- A recent DSH release (peer line `0.2.1-rc`)
+
+| DSH release | Status |
+|---|---|
+| `0.2.1-rc.2` | supported |
+| `0.2.1-rc.3` | supported |
+| `0.2.1-rc.4` | supported (current test target) |

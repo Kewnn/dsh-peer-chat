@@ -41,6 +41,13 @@
         "@deepseek-ai/dsh-client-connection",
         "@deepseek-ai/dsh-client-ui-settings"
       ]
+    },
+    "compatibility": {
+      "dshReleases": {
+        "0.2.1-rc.2": "compatible",
+        "0.2.1-rc.3": "compatible",
+        "0.2.1-rc.4": "compatible"
+      }
     }
   },
   "peerDependencies": {

@@ -92,7 +92,14 @@ Peer table (`peers.json`) — keys are ports:
 ## Requirements
 
 - Node ≥ 22.15 (uses `zlib` zstd)
-- A recent DSH release (the peer line `0.2.1-rc`)
+
+| DSH release | Status |
+|---|---|
+| `0.2.1-rc.2` | supported |
+| `0.2.1-rc.3` | supported |
+| `0.2.1-rc.4` | supported (current test target) |
+
+Anything older than `0.2.1-rc.2` is untested: the plugin relies on the `0.2.1-rc` peer surface.
 
 ## License
 
