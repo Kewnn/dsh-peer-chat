@@ -65,6 +65,23 @@ peer_tail({ peer: '<端口>', sessionId: '<会话>', n: 3 })
 | `peer_chain` | 多跳链路，`{prev}` 传上一步 | 逐步 |
 | `peer_tail` | 读最近 n 条助手消息 | — |
 
+### 对方弹出选择题怎么办
+
+选择题卡片没法用文本回答，所以 `peer_ask` 会**识别出“对端停在选择题上”**（`ask_user_question`，
+或带 options 的 `show_view`）并直接告诉你，而不是干等到超时：
+
+```
+⏸ 对方停在选择题上（ask_user_question）：基础镜像用哪个？
+  A. slim
+  B. full
+回一个字母即可：peer_send({ peer: '<端口>', sessionId: '<会话>', message: 'A' })
+```
+
+同一个信息也在返回值的 `pendingQuestion: { tool, question, options[] }` 里，调用方可以自行决定。
+
+如果你能控制对端的模式，建议让它输出**纯文字选择题**（`A. … B. …`）而不是卡片——那样普通
+`peer_send` 就能回答，不涉及任何卡片状态。
+
 ## 配置
 
 ```yaml

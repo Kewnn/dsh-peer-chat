@@ -41,7 +41,7 @@ import { zstdDecompressSync } from 'node:zlib'
 
 export const name = 'dsh-peer-chat'
 export const inject = ['tools', 'agents']
-const PACKAGE_VERSION = '2.1.0'
+const PACKAGE_VERSION = '2.2.0'
 /** 兜底工作目录：cwd 拿不到时用它，避免会议落到 sessions\_no-cwd（前端 session/not-found）。 */
 const DEFAULT_LOCAL_WORKSPACE = 'E:\\dshsystem\\Documents\\deepseek-harness\\default-workspace'
 
@@ -752,6 +752,53 @@ function findSessionLog(home, sessionId) {
   return null
 }
 
+/**
+ * 对端是不是停在"选择题"上：最后一个 tool/call 是 ask_user_question / show_view(options)，
+ * 且之后没有用户回复 → 返回 { question, options:[label...], tool }。
+ * 卡片类交互无法用文本回复驱动，所以要把选项翻译成文字，交给调用方决定（peer_send 回一个 label 即可）。
+ */
+function pendingQuestionOf(home, sessionId) {
+  const file = findSessionLog(home, sessionId)
+  if (file === null || file === undefined) return null
+  let ev = []
+  try {
+    ev = decodeEvents(file)
+  } catch { return null }
+  // 精确判定：找最后一次 ask_user_question / show_view 的 tool/call，
+  // 再看有没有**同一个 callId** 的 tool/result —— 没有就是还没答，卡片还挂着。
+  // （中间的 user/assistant 正文都不能作为"已答"的依据：卡片要结构化答案才会消解。）
+  for (let i = ev.length - 1; i >= 0; i--) {
+    const e = ev[i]
+    if (e?.type !== 'tool/call') continue
+    const name = String(e?.data?.name ?? '')
+    if (name !== 'ask_user_question' && name !== 'show_view') continue
+    const callId = String(e?.data?.callId ?? '')
+    const resolved = callId !== ''
+      && ev.some((x) => x?.type === 'tool/result' && String(x?.data?.callId ?? '') === callId)
+    if (resolved) return null
+    let args = {}
+    try { args = JSON.parse(String(e?.data?.arguments ?? '{}')) } catch { return null }
+    const first = Array.isArray(args.questions) ? args.questions[0] : undefined
+    if (first !== undefined) {
+      const options = Array.isArray(first.options)
+        ? first.options.map((o) => String(o?.label ?? o?.value ?? '')).filter((s) => s !== '')
+        : []
+      return {
+        tool: name,
+        question: String(first.question ?? first.header ?? '').trim(),
+        options,
+      }
+    }
+    const view = args.view
+    if (view !== undefined && Array.isArray(view?.options)) {
+      const options = view.options.map((o) => String(o?.label ?? '')).filter((s) => s !== '')
+      return { tool: name, question: String(args.title ?? view?.question ?? '').trim(), options }
+    }
+    return null
+  }
+  return null
+}
+
 function lastTurnOf(home, sessionId) {
   const file = findSessionLog(home, sessionId)
   if (file === null) return 0
@@ -881,6 +928,7 @@ async function askRemote(peer, peersFile, config, args, exec) {
     degraded: [],
     reply,
     timedOut: reply === '',
+    pendingQuestion: pendingQuestionOf(peer.home, sessionId) ?? undefined,
     waitedMs: Date.now() - started,
     turnsBefore: before,
     tokenSourceKind: session.token.kind,
@@ -931,6 +979,7 @@ async function askLocal(ctx, peer, args, exec) {
     timedOut: reply === '',
     waitedMs: Date.now() - started,
     turnsBefore: before,
+    pendingQuestion: pendingQuestionOf(peer.home, sessionId) ?? undefined,
     tokenSourceKind: 'local',
     tokenSource: '本机直连（无需 token）',
   }
@@ -2102,6 +2151,15 @@ export async function apply(ctx, config = {}) {
           degraded: { type: 'array', items: { type: 'string' } },
           reply: { type: 'string' },
           timedOut: { type: 'boolean' },
+          pendingQuestion: {
+            type: 'object',
+            additionalProperties: true,
+            properties: {
+              tool: { type: 'string' },
+              question: { type: 'string' },
+              options: { type: 'array', items: { type: 'string' } },
+            },
+          },
           waitedMs: { type: 'number' },
           turnsBefore: { type: 'number' },
           tokenSourceKind: { type: 'string' },
@@ -2115,6 +2173,14 @@ export async function apply(ctx, config = {}) {
           `peer=${value.peer} route=${value.route} session=${value.sessionId}${value.created ? '（新建）' : ''}`
             + `｜建会话=${value.createVia ?? '?'}｜投递=${value.deliverVia ?? '?'}｜${Math.round(value.waitedMs / 1000)} 秒`,
           ...(Array.isArray(value.degraded) && value.degraded.length > 0 ? [`降级：${value.degraded.join('；')}`] : []),
+          ...(value.pendingQuestion !== undefined
+            ? [
+              `⏸ 对方停在选择题上（${value.pendingQuestion.tool}）：${value.pendingQuestion.question}`,
+              ...(value.pendingQuestion.options ?? []).map((label, index) =>
+                /^[A-Za-z][.)、]\s*/.test(label) ? `  ${label}` : `  ${String.fromCharCode(65 + index)}. ${label}`),
+              `回一个字母即可：peer_send({ peer: '${value.peer}', sessionId: '${value.sessionId}', message: 'A' })`,
+            ]
+            : []),
           value.timedOut
             ? `已投递，但没等到 turn 结束${value.reply === '' ? '' : `\n\n${truncate(value.reply, RENDER_LIMIT)}`}`
             : truncate(value.reply, RENDER_LIMIT),

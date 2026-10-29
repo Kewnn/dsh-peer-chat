@@ -68,6 +68,24 @@ peer_tail({ peer: '<port>', sessionId: '<session>', n: 3 })
 | `peer_chain` | Multi-hop chain, `{prev}` carries the reply | per step |
 | `peer_tail` | Read the last n assistant messages | — |
 
+### When the peer asks a question with options
+
+Interactive choice cards cannot be answered by text, so `peer_ask` detects when the peer stopped on one
+(`ask_user_question` / a `show_view` with options) and reports it instead of silently timing out:
+
+```
+⏸ peer stopped on a choice (ask_user_question): Which base image should I use?
+  A. slim
+  B. full
+Reply with a letter: peer_send({ peer: '<port>', sessionId: '<session>', message: 'A' })
+```
+
+The same information is on the result as `pendingQuestion: { tool, question, options[] }`, so a caller can decide
+on its own.
+
+If you control the peer's presets, prefer **plain-text choices** (`A. …  B. …`) over cards: they can be answered
+by a normal `peer_send`, no card state is involved.
+
 ## Configuration
 
 ```yaml
