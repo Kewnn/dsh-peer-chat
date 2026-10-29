@@ -25,6 +25,15 @@ install is enough.
 
 ## Install
 
+**Prebuilt tarball — no npm account, no build approval:**
+
+```powershell
+dsh plugin --profile web add https://github.com/Kewnn/dsh-peer-chat/releases/download/v2.3.1/dsh-peer-chat-2.3.1.tgz
+# restart DSH afterwards
+```
+
+**From source:**
+
 ```powershell
 # 1. copy the package under the profile
 Copy-Item -Recurse .\dsh-peer-chat "$env:DSH_HOME\profiles\web\local-plugins\dsh-peer-chat"
