@@ -41,7 +41,7 @@ import { zstdDecompressSync } from 'node:zlib'
 
 export const name = 'dsh-peer-chat'
 export const inject = ['tools', 'agents']
-const PACKAGE_VERSION = '2.3.0'
+const PACKAGE_VERSION = '2.3.1'
 /** 兜底工作目录：cwd 拿不到时用它，避免会议落到 sessions\_no-cwd（前端 session/not-found）。 */
 const DEFAULT_LOCAL_WORKSPACE = 'E:\\dshsystem\\Documents\\deepseek-harness\\default-workspace'
 
@@ -1300,6 +1300,10 @@ async function runChain(ctx, config, args, exec) {
         break
       }
 
+      // 超时但会话还活着 → 容忍：记 sent、链路继续，下一步会自动插话进去
+      const tolerated = run.outcome.timedOut === true
+        && typeof run.outcome.sessionId === 'string' && run.outcome.sessionId !== ''
+
       results.push({
         index: index + 1,
         peer: run.peerName,
@@ -1357,7 +1361,7 @@ async function runChain(ctx, config, args, exec) {
         continue
       }
 
-      if (!run.outcome.ok) {
+      if (!run.outcome.ok && !tolerated) {
         if (steps[index]?.onFail === 'skip') {
           results[results.length - 1].status = 'skipped'
           break
