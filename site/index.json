@@ -7,8 +7,8 @@
     {
       "name": "dsh-peer-chat",
       "title": "Cross-instance chat / 跨实例会话对话",
-      "description": "Let one DSH instance talk to another: send, ask, steer, chain and read back — peers are addressed by port; tokens and pending choice questions are handled for you.",
-      "descriptionZh": "让一个 DSH 实例直接和另一个实例对话：投递、提问、插话、链路、读回；对端用端口标识，token 与对端的选择题都会自动处理。",
+      "description": "Let one DSH instance talk to another: send, ask, steer, chain and read back. Chains steer into the same peer session automatically; peers are addressed by port.",
+      "descriptionZh": "让一个 DSH 实例直接和另一个实例对话：投递、提问、插话、链路、读回；链路对同一对端自动插话，对端用端口标识。",
       "author": "Kewnn",
       "license": "Apache-2.0",
       "homepage": "https://github.com/Kewnn/dsh-peer-chat#readme",
@@ -26,13 +26,13 @@
       "icon": "https://raw.githubusercontent.com/Kewnn/dsh-peer-chat/main/icon.svg",
       "versions": [
         {
-          "version": "2.2.0",
-          "publishTimestamp": 1793250698,
+          "version": "2.3.0",
+          "publishTimestamp": 1793251705,
           "license": "Apache-2.0",
           "source": {
             "type": "git",
             "url": "https://github.com/Kewnn/dsh-peer-chat",
-            "commit": "d55c151ac8811e5a99ab5c2ffc5a0d95792b76c4",
+            "commit": "8ea4ea2dce6a841a691d5b6a29ad2d21c5d50733",
             "directory": "."
           },
           "engines": {
