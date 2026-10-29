@@ -76,8 +76,7 @@
     "agent"
   ],
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "author": {
     "name": "dsh-peer-chat contributors"
