@@ -35,7 +35,7 @@ dsh-peer-chat\
 本机常见的 profile 目录：
 
 ```
-E:\dshsystem\dsh-home\profiles\web
+<DSH_HOME>\profiles\web
 ```
 
 ---
@@ -54,7 +54,7 @@ E:\dshsystem\dsh-home\profiles\web
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\install-peer-chat.ps1 `
-     -Target E:\dshsystem\dsh-home\profiles\web
+     -Target <DSH_HOME>\profiles\web
 ```
 
 （机器上只装了 Windows PowerShell 时，把 `pwsh` 换成 `powershell` 即可。）
@@ -63,7 +63,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\install-peer-chat.ps1 `
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\install-peer-chat.ps1 `
-     -Target E:\dshsystem\dsh-home\profiles\web -RemoveManualInsert
+     -Target <DSH_HOME>\profiles\web -RemoveManualInsert
 ```
 
 不加 `-RemoveManualInsert` 时脚本会**拒绝执行**并打印冲突行号——因为手写 insert 和 `dsh.profile.bundles` 同时存在会把插件挂载两次（§8-坑2）。
@@ -157,7 +157,7 @@ cannot resolve profile bundle "dsh-peer-chat" …
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\uninstall-peer-chat.ps1 `
-     -Target E:\dshsystem\dsh-home\profiles\web
+     -Target <DSH_HOME>\profiles\web
 ```
 
 | 参数 | 必填 | 默认 | 说明 |
@@ -179,7 +179,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\uninstall-peer-chat.ps1 `
 
 ```powershell
 # 1. 找回备份（时间戳选安装前那个）
-Get-ChildItem 'E:\dshsystem\dsh-home\profiles\web' -Filter '*.bak-peerchat*' | Sort-Object LastWriteTime
+Get-ChildItem '<DSH_HOME>\profiles\web' -Filter '*.bak-peerchat*' | Sort-Object LastWriteTime
 
 # 2. 盖回去（示例：换成你实际看到的文件名）
 Copy-Item '.\package.json.bak-peerchat-20261029-044641' '.\package.json' -Force
@@ -256,7 +256,7 @@ DSH 的组合规则是：`package.json` 的 `dsh.profile.bundles` 里每个包�
 
 ## 9. 演练记录（本次实测）
 
-临时 profile：`E:\dshsystem\caches\temp\peer-probe\install-test`（最小 `package.json` + 空 patch），子脚本一律通过 `powershell.exe -NoProfile -File` 当独立进程跑，共 **56 条断言全过**：
+临时 profile：`<临时目录>\install-test`（最小 `package.json` + 空 patch），子脚本一律通过 `powershell.exe -NoProfile -File` 当独立进程跑，共 **56 条断言全过**：
 
 | 阶段 | 断言 | 结果 |
 |---|---|---|
@@ -269,7 +269,7 @@ DSH 的组合规则是：`package.json` 的 `dsh.profile.bundles` 里每个包�
 | 6 坏输入 | 目录不存在 → `exit 2`；缺 `dsh.profile.bundles` → `exit 2` 且目录内无新增文件 | PASS |
 | 边界（额外） | `dependencies:{}` + `bundles:[]` 能装能还原；旧副本内容不一致时先改名为 `.bak-peerchat-*` 再复制，卸载时把旧副本**原样放回** | PASS |
 
-完整日志：`E:\dshsystem\caches\temp\peer-probe\rehearsal.log`，演练脚本：`E:\dshsystem\caches\temp\peer-probe\run-rehearsal.ps1`（可重跑）。
+完整日志与演练脚本存放在交付时的临时目录里，可重跑。
 
 ---
 

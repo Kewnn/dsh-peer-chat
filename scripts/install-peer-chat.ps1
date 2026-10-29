@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Install dsh-peer-chat into one DSH profile directory.
 
@@ -18,7 +18,7 @@
   is gone (see -RemoveManualInsert).
 
 .PARAMETER Target
-  The profile directory to change, e.g. E:\dshsystem\dsh-home\profiles\web.
+  The profile directory to change, e.g. <profile>.
   The directory must exist; it must contain a package.json.
 
 .PARAMETER Source
@@ -32,7 +32,7 @@
 
 .EXAMPLE
   pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\install-peer-chat.ps1 `
-       -Target E:\dshsystem\dsh-home\profiles\web
+       -Target <profile>
 
 .EXAMPLE
   # profile that was hand-installed earlier: drop the duplicate manual insert first

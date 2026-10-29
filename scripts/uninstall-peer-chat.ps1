@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Remove dsh-peer-chat from one DSH profile directory.
 
@@ -22,7 +22,7 @@
   that row out so the instance stays bootable.
 
 .PARAMETER Target
-  The profile directory to clean, e.g. E:\dshsystem\dsh-home\profiles\web.
+  The profile directory to clean, e.g. <profile>.
 
 .PARAMETER RestoreBackup
   Force the recorded pre-install backups of package.json (and cordis.patch.yml) back into place
@@ -30,7 +30,7 @@
 
 .EXAMPLE
   pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\uninstall-peer-chat.ps1 `
-       -Target E:\dshsystem\dsh-home\profiles\web
+       -Target <profile>
 
 .NOTES
   Exit codes: 0 ok (also when there was nothing to remove) / 2 preflight refused / 4 post-check

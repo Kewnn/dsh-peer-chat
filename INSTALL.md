@@ -10,8 +10,8 @@ Chinese: [INSTALL.zh-CN.md](./INSTALL.zh-CN.md)　｜　Overview: [README.md](./
 - DSH `0.2.1-rc.4` (the package declares peers for the `0.2.1-rc` line)
 - Node ≥ 22.15 (the plugin uses `zlib` zstd)
 - Paths below are examples — adjust to your machine:
-  - checkout: `E:\dshsystem\deepseek-harness`
-  - profile: `E:\dshsystem\dsh-home\profiles\web`
+  - checkout: `<checkout>`
+  - profile: `<DSH_HOME>\profiles\web`
 
 ## 1. Place the files
 
@@ -44,13 +44,13 @@ Copy-Item -Recurse .\dsh-peer-chat "$env:DSH_HOME\profiles\web\local-plugins\dsh
 Install — **stop the server first**, otherwise `node_modules` is locked and pnpm fails halfway:
 
 ```powershell
-# 1) stop the instance on 3130
-Get-NetTCPConnection -LocalPort 3130 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+# 1) stop the instance on <port>
+Get-NetTCPConnection -LocalPort <port> -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
 # 2) install
 cd "$env:DSH_HOME\profiles\web"
 pnpm install --registry https://registry.npmmirror.com
 # 3) start again
-& "E:\dshsystem\DSHSY.cmd" --no-open
+& "<start script>" --no-open
 ```
 
 ## 3. Mount it
@@ -85,20 +85,20 @@ Plugin modules load at startup — editing files (or tool schemas) requires a re
     - id: dsh-peer-chat
       name: dsh-peer-chat
       config:
-        peersFile: E:\dshlaw\tools\dsh-peer\peers.json   # peer table
-        localHome: E:\dshsystem\dsh-home                 # this instance's DSH_HOME (token discovery)
-        defaultWorkspace: E:\dshsystem\Documents\deepseek-harness\default-workspace
+        peersFile: <peers.json>   # peer table
+        localHome: <DSH_HOME>                 # this instance's DSH_HOME (token discovery)
+        defaultWorkspace: <default workspace>
         mergeSessionTools: true                          # mount the built-in local session tools
         mergeSessionPlus: true                           # mount the built-in preset/steer layer
-        discoverPorts: [3080, 3090, 3100, 3130]          # optional: scan this list instead of 3000-3200
+        discoverPorts: [3080, <port>, 3100, <port>]          # optional: scan this list instead of 3000-3200
 ```
 
 `peers.json` — key by **port** (recommended):
 
 ```json
 {
-  "3090": { "url": "http://127.0.0.1:3090", "home": "E:\\dshlonger\\dsh-home" },
-  "3130": { "url": "http://127.0.0.1:3130", "home": "E:\\dshsystem\\dsh-home" }
+  "<port>": { "url": "http://127.0.0.1:<port>", "home": "<peer DSH_HOME>" },
+  "<port>": { "url": "http://127.0.0.1:<port>", "home": "<DSH_HOME>" }
 }
 ```
 
