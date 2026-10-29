@@ -1,13 +1,14 @@
 {
   "schemaVersion": 1,
   "name": "kewn-dsh-plugins",
-  "title": "Kewn 的 DSH 插件",
-  "description": "个人维护的 DSH 插件索引（Apache-2.0）",
+  "title": "Kewn DSH plugins / Kewn 的 DSH 插件",
+  "description": "Curated DSH plugins (Apache-2.0). 自用 DSH 插件索引（Apache-2.0）。",
   "plugins": [
     {
       "name": "dsh-peer-chat",
-      "title": "跨实例会话对话（dsh-peer-chat）",
-      "description": "三合一：本地会话工具 + 按预设建会话/运行中插话 + 跨 DSH 实例对话（peer_ask / peer_send / peer_steer / peer_chain / peer_tail）。",
+      "title": "Cross-instance chat / 跨实例会话对话",
+      "description": "Local session tools + preset spawn/steer + peer_ask / peer_send / peer_steer / peer_chain / peer_tail. Peers are addressed by port (e.g. 3090); the web token is discovered from peer logs. 本地会话工具 + 预设建会话/插话 + 跨端对话；对端用端口标识，token 自动识别。",
+      "descriptionZh": "三合一：本地会话工具、按预设建会话/运行中插话、跨 DSH 实例对话；对端用端口（如 3090）标识，token 自动从对端日志识别。",
       "author": "Kewnn",
       "license": "Apache-2.0",
       "homepage": "https://github.com/Kewnn/dsh-peer-chat#readme",
@@ -19,18 +20,19 @@
         "dsh-plugin",
         "session",
         "cross-instance",
-        "agent"
+        "agent",
+        "peer"
       ],
       "icon": "https://raw.githubusercontent.com/Kewnn/dsh-peer-chat/main/icon.svg",
       "versions": [
         {
           "version": "2.1.0",
-          "publishTimestamp": 1793248871,
+          "publishTimestamp": 1793249068,
           "license": "Apache-2.0",
           "source": {
             "type": "git",
             "url": "https://github.com/Kewnn/dsh-peer-chat",
-            "commit": "33eb9efab15309a1ef7dbd98b1f3ddf0ac97e5fd",
+            "commit": "022073800a5057d584a40a3b2b32a4b88884a8df",
             "directory": "."
           },
           "engines": {
