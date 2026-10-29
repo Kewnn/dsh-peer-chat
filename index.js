@@ -1021,6 +1021,9 @@ async function runSend(ctx, config, peer, args, exec) {
  * mode = 该步在**对端**用哪个 preset 建会话；优先级 steps[i].mode > 顶层 mode > 对端默认。
  * 无效 mode 报「未知模式」，不静默降级；{prev} 原位替换上一步回复。
  */
+/** 链路某步解析出来是空消息时的兜底（面板"运行输入"留空会触发）。 */
+const DEFAULT_STEP_MESSAGE = '（这一步没有给出输入。请先用一句话确认你在线，然后等下一步指令。）'
+
 /** 按模式给默认消息模板；模板里可用 {input} / {prev}。 */
 const MODE_TEMPLATES = {
   review: '审核上一步的产出。给结论与关键修改意见，最后**单独一行**写 NEXT（通过，进入下一步）或 REWORK（返工，重做上一步）：\n\n{prev}',
@@ -1081,11 +1084,15 @@ function resolveStepMessage(step, mode, index, previous, input, templates, outpu
     : (typeof custom === 'string' && custom.trim() !== '' ? custom.trim() : autoTemplateFor(mode, index))
   const withStepRefs = applyStepRefs(template, outputs ?? [])
   const withInput = withStepRefs.split('{input}').join(input)
-  return previous === ''
+  const built = previous === ''
     ? withInput.split('{prev}').join('')
     : withInput.includes('{prev}')
       ? withInput.split('{prev}').join(previous)
       : `${withInput}\n\n（上一步回复）\n${previous}`
+  // 面板里「运行输入」留空时，{input} 会被替换成空串 → 整条消息为空 → peer_ask 报「必填」。
+  // 链路不该因此停掉：兜一句最小可执行的默认消息。
+  if (built.trim() === '') return DEFAULT_STEP_MESSAGE
+  return built
 }
 
 /**
@@ -1807,6 +1814,9 @@ function registerPanelRoute(ctx, config) {
         try {
           const url = new URL(req.url ?? '/', 'http://local')
           if ((url.searchParams.get('scan') ?? '') === '1') {
+            // 本机端口：从请求的 Host 头取，用来把"自己"从扫描结果里剔掉
+            const hostHeader0 = String(req.headers?.host ?? '')
+            const selfPort = /:(\d+)$/.exec(hostHeader0)?.[1] ?? ''
             const deep = discoverPeers(config, { budgetMs: 3_000, force: true }).map((row) => ({
               name: row.name,
               url: row.url,
@@ -1818,17 +1828,22 @@ function registerPanelRoute(ctx, config) {
             let portHits = []
             try {
               const hits = await probeLoopbackPorts(config, undefined)
-              portHits = hits.map((hit) => ({
-                name: `port-${hit.port}`,
-                url: hit.url,
-                home: '',
-                origin: 'port-scan',
-                tokenPrefix: '',
-                sourceKind: 'none',
-              }))
+              portHits = hits
+                .filter((hit) => String(hit.port) !== String(selfPort))   // 不显示自己这个端口
+                .map((hit) => ({
+                  name: `port-${hit.port}`,
+                  url: hit.url,
+                  home: '',
+                  origin: 'port-scan',
+                  tokenPrefix: '',
+                  sourceKind: 'none',
+                }))
             } catch { /* 端口探测失败不影响目录扫描结果 */ }
             const merged = [...deep, ...portHits]
-            send(200, { ok: true, peers: panelPeersPayload(config, merged), scanned: merged.length })
+            // 与默认快照同形状返回（含 modes / chains / templates），
+            // 否则前端只拿到 peers，会把下面的模板区清空。
+            const baseSnap = await snapshot()
+            send(200, { ...baseSnap, peers: panelPeersPayload(config, merged), scanned: merged.length })
             return
           }
           const peerQuery = (url.searchParams.get('peer') ?? '').trim()

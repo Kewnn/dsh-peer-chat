@@ -214,6 +214,8 @@ window.__ModuleLoader__.load({
                 const json = await res.json()
                 if (!json || json.ok !== true) throw new Error((json && (json.error || json.reply)) || '发送失败')
                 setMessage(`已发送${json.sessionId ? `：${json.sessionId}` : ''}${json.reply ? `\n${json.reply}` : ''}`)
+                // 发送成功后 1 秒自动关闭面板（先把回执显示出来）
+                setTimeout(() => setOpen(false), 1000)
               } catch (failure) {
                 setError(String((failure && failure.message) || failure))
               } finally { setSaving(false) }
@@ -358,7 +360,8 @@ window.__ModuleLoader__.load({
           const res = await fetch('/dsh-peer-chat-api?scan=1', { cache: 'no-store' })
           const json = await res.json()
           if (!json || json.ok !== true) throw new Error((json && json.error) || '扫描失败')
-          setData(json)
+          // 扫描只返回 peers；不能整体替换，否则模式/链路/模板会被冲掉
+          setData((prev) => ({ ...(prev ?? {}), ...json, peers: json.peers ?? (prev?.peers ?? []) }))
           setError('')
         } catch (failure) {
           setError(String((failure && failure.message) || failure))
