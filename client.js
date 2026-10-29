@@ -193,12 +193,14 @@ window.__ModuleLoader__.load({
           h('button', { style: S.btn, onClick: () => save(true), disabled: saving }, '保存并发送'),
           h('button', {
             style: { ...S.btn, fontWeight: 600 },
-            disabled: saving || (runInput ?? '').trim() === '',
-            title: '不走链路：直接把这句发给第一个目标；填了模式就按该模式新建会话再发',
+            disabled: saving,
+            title: '不走链路：把这条内容发给第一个目标；填了模式就按该模式新建会话再发',
             onClick: async () => {
               const first = rows.find((row) => row.enabled && row.peer !== '') ?? rows[0]
-              const text = (runInput ?? '').trim()
-              if (text === '') { setError('先写要发送的内容'); return }
+              const rowText = first && first.message !== '__auto__' ? String(first.message ?? '').trim() : ''
+              // 顶部输入优先；没填就用第一行写的消息内容
+              const text = ((runInput ?? '').trim() || rowText)
+              if (text === '') { setError('先写要发送的内容（顶部输入框或第一行的消息内容）'); return }
               setSaving(true); setError(''); setMessage('')
               try {
                 const res = await fetch('/dsh-peer-chat-api', {

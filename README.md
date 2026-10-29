@@ -19,7 +19,7 @@ install is enough.
   logs and retries once if it turns out stale.
 - **Ask or fire-and-forget.** `peer_ask` waits for the reply; `peer_send` returns on delivery; `peer_steer` drops
   the message at the next step boundary.
-- **Chains.** `peer_chain` runs multiple hops and passes each reply forward.
+- **Chains.** `peer_chain` runs multiple hops and passes each reply forward. Steps that target the same peer **steer into the session opened by the first step** instead of starting a new turn (override per step with `deliver: 'ask'`).
 - **Panel.** A sidebar entry to pick a peer, pick a mode, type a message and send — or build a chain visually.
 - **Self-contained.** Session creation, preset mounting and steering ship with the plugin.
 

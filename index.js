@@ -41,7 +41,7 @@ import { zstdDecompressSync } from 'node:zlib'
 
 export const name = 'dsh-peer-chat'
 export const inject = ['tools', 'agents']
-const PACKAGE_VERSION = '2.2.0'
+const PACKAGE_VERSION = '2.3.0'
 /** 兜底工作目录：cwd 拿不到时用它，避免会议落到 sessions\_no-cwd（前端 session/not-found）。 */
 const DEFAULT_LOCAL_WORKSPACE = 'E:\\dshsystem\\Documents\\deepseek-harness\\default-workspace'
 
@@ -52,6 +52,9 @@ const LOG_NAMES = ['web-console.log', 'console.log', 'dsh-web.log']
 
 // CREATE_TRACE：每次"本插件建会话"都留一行，用于区分"插件建的"还是"前端建的"。
 // 排查 _no-cwd 时看这个日志里有没有对应 sessionId：没有 → 不是插件建的。
+/** API 调用留痕：面板按钮"没反应"时，先看 <DSH_HOME>/peer-chat/api.log 里有没有这条。 */
+function apiTrace(config, entry) { traceCreate(config, entry) }
+
 function traceCreate(config, entry) {
   try {
     const home = (typeof config?.localHome === 'string' && config.localHome.trim() !== '') ? config.localHome.trim() : (process.env.DSH_HOME ?? '')
@@ -805,6 +808,25 @@ function lastTurnOf(home, sessionId) {
   try { return summarize(decodeEvents(file)).lastTurn } catch { return 0 }
 }
 
+/**
+ * 插话之后等新回复：插进去的是**同一个 turn**，不会有新 turn 结束事件，
+ * 所以按"助手文本条数增加"来判断，而不是等 endedTurns。
+ */
+async function waitForSteerReply(home, sessionId, beforeCount, timeoutMs, signal) {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (signal?.aborted) throw new Error('peer_steer 已被取消')
+    await sleep(Math.min(POLL_INTERVAL_MS, Math.max(deadline - Date.now(), 200)), signal)
+    const file = findSessionLog(home, sessionId)
+    if (file === null) continue
+    let summary
+    try { summary = summarize(decodeEvents(file)) } catch { continue }
+    const texts = summary.assistants.map((item) => item.text).filter((text) => text !== '')
+    if (texts.length > beforeCount) return texts.slice(beforeCount).join('\n\n')
+  }
+  return ''
+}
+
 /** 轮询会话日志，等「投递前最大 turn 之后」的 assistant 正文收尾。 */
 async function waitForReply(home, sessionId, before, timeoutMs, signal, startedAt) {
   const deadline = startedAt + timeoutMs
@@ -1186,6 +1208,9 @@ async function runChain(ctx, config, args, exec) {
   const outputs = []
   let previous = ''
   let reworks = 0
+  // 同一个对端的后续步骤默认「插话」进第一段打开的会话，而不是又排一个 turn。
+  // 想强制另起一轮就用 step.deliver: 'ask'。
+  const sessionsByPeer = new Map()
 
   const runStep = async (index, context) => {
     const step = steps[index]
@@ -1194,6 +1219,45 @@ async function runChain(ctx, config, args, exec) {
     const stepMode = typeof step.mode === 'string' && step.mode.trim() !== '' ? step.mode.trim() : defaultMode
     const message = resolveStepMessage(step, stepMode, index, context, input, templates, outputs)
     const peer = resolvePeerTarget({ peer: peerName }, config)
+
+    const known = sessionsByPeer.get(peerName)
+    const explicit = typeof step.deliver === 'string' ? step.deliver.trim() : ''
+    const deliver = explicit !== '' ? explicit : (known === undefined ? 'ask' : 'steer')
+
+    if (deliver === 'steer' && known !== undefined) {
+      // 插话前记下"已有多少条助手正文"，插完等这个数量变大 → 拿到这一轮里的新回复
+      let beforeCount = 0
+      try {
+        const fileBefore = findSessionLog(peer.home, known)
+        if (fileBefore !== null) {
+          beforeCount = summarize(decodeEvents(fileBefore)).assistants.filter((item) => item.text !== '').length
+        }
+      } catch { beforeCount = 0 }
+      const steered = await runSteer(ctx, config, peer, { sessionId: known, message }, exec)
+      const budget = Number.isFinite(step.timeoutMs) ? step.timeoutMs : (args?.timeoutMs ?? DEFAULT_TIMEOUT_MS)
+      let reply = ''
+      try {
+        reply = await waitForSteerReply(peer.home, known, beforeCount, budget, exec?.signal)
+      } catch { reply = '' }
+      return {
+        step,
+        peerName,
+        stepMode,
+        message,
+        deliver,
+        // 拿到插话后的新回复就用它；没等到才退回上一步的上下文（{prev} 仍然成立）
+        outcome: {
+          ...steered,
+          ok: true,
+          sessionId: known,
+          reply: reply !== '' ? reply : context,
+          waitedMs: 0,
+          timedOut: reply === '',
+          pendingQuestion: pendingQuestionOf(peer.home, known) ?? undefined,
+        },
+      }
+    }
+
     const outcome = await runAsk(ctx, config, peer, {
       ...step,
       peer: peerName,
@@ -1201,7 +1265,8 @@ async function runChain(ctx, config, args, exec) {
       ...(stepMode === undefined ? {} : { preset: stepMode }),
       timeoutMs: step.timeoutMs ?? args?.timeoutMs,
     }, exec)
-    return { step, peerName, stepMode, message, outcome }
+    if (typeof outcome.sessionId === 'string' && outcome.sessionId !== '') sessionsByPeer.set(peerName, outcome.sessionId)
+    return { step, peerName, stepMode, message, deliver, outcome }
   }
 
   for (let index = 0; index < steps.length; index += 1) {
@@ -1240,9 +1305,11 @@ async function runChain(ctx, config, args, exec) {
         peer: run.peerName,
         sessionId: run.outcome.sessionId,
         mode: run.stepMode ?? '',
-        status: run.outcome.ok ? 'ok' : 'failed',
+        deliver: run.deliver ?? 'ask',
+        // 超时但会话还活着 → 记成 sent（已投递、仍在跑），链路继续；下一步会自动插话进去
+        status: run.outcome.ok ? 'ok' : (run.outcome.timedOut === true && typeof run.outcome.sessionId === 'string' && run.outcome.sessionId !== '' ? 'sent' : 'failed'),
         bytes: Buffer.byteLength(run.outcome.reply ?? '', 'utf8'),
-        ok: run.outcome.ok,
+        ok: run.outcome.ok === true || (run.outcome.timedOut === true && typeof run.outcome.sessionId === 'string' && run.outcome.sessionId !== ''),
         reply: run.outcome.reply,
         waitedMs: run.outcome.waitedMs,
         ...(retries > 0 ? { rework: retries } : {}),
@@ -1967,8 +2034,11 @@ function registerPanelRoute(ctx, config) {
                 const out = await runAsk(ctx, config, target, { message, preset, mode: body.mode }, {})
                 send(200, { ok: true, ...out })
               }
+              apiTrace(config, { action: 'send', peer: peerName, sessionId: sessionId ?? null, preset: preset ?? null, ok: true })
             } catch (error) {
-              send(200, { ok: false, error: String((error && error.message) || error) })
+              const detail = String((error && error.message) || error)
+              apiTrace(config, { action: 'send', peer: peerName, sessionId: sessionId ?? null, preset: preset ?? null, ok: false, error: detail })
+              send(200, { ok: false, error: detail })
             }
             return
           } else if (action === 'run-chain') {
@@ -2265,7 +2335,13 @@ export async function apply(ctx, config = {}) {
       },
       render: (_args, value) => [{
         type: 'text',
-        text: value.steps.map((step) => `[${step.index}] ${step.peer} → ${step.ok ? truncate(step.reply, 600) : '（失败）'}`).join('\n')
+        text: value.steps.map((step) => {
+          const tag = step.deliver === 'steer' ? '（插话）' : (step.status === 'sent' ? '（已投递·仍在跑）' : '')
+          const body = step.status === 'sent'
+            ? '已插话/已投递，未等回复'
+            : (step.ok ? truncate(step.reply, 600) : '（失败）')
+          return `[${step.index}] ${step.peer} → ${body}${tag}`
+        }).join('\n')
           + (value.ok ? `\n\n最终：${truncate(value.final, 1200)}` : `\n\n在第 ${value.stoppedAt} 步中断`),
       }],
     },
