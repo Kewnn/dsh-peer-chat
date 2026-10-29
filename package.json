@@ -1,0 +1,82 @@
+{
+  "name": "dsh-peer-chat",
+  "version": "2.1.0",
+  "description": "DSH 三合一插件：本地会话工具（vendor session-tools）+ 预设建会话/插话（vendor session-plus）+ 跨 DSH 实例对话 peer_*。",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "icon.svg",
+    "preview.html",
+    "vendor",
+    "locale",
+    "scripts",
+    "docs",
+    "README.md",
+    "INSTALL.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@ryuu-64/dsh-session-tools": ">=0.8.0",
+    "dsh-session-plus": "*"
+  },
+  "peerDependenciesMeta": {
+    "@ryuu-64/dsh-session-tools": {
+      "optional": true
+    },
+    "dsh-session-plus": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.15"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "session",
+    "cross-instance",
+    "agent"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "author": {
+    "name": "dsh-peer-chat contributors"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kewn/dsh-peer-chat.git"
+  },
+  "homepage": "https://github.com/kewn/dsh-peer-chat#readme",
+  "bugs": {
+    "url": "https://github.com/kewn/dsh-peer-chat/issues"
+  }
+}

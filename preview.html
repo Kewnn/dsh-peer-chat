@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>跨端对话 · 面板预览</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0f1115; color: #e6e6e6; font: 13px/1.6 system-ui, "Segoe UI", "Microsoft YaHei", sans-serif; }
+  .wrap { max-width: 860px; margin: 24px auto; padding: 18px 20px; border: 1px solid #24262d; border-radius: 12px; background: #14161c; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .title { font-weight: 600; font-size: 14px; }
+  .group { border-top: 1px solid #22242b; padding: 10px 0; }
+  .label { color: #8b90a0; font-size: 12px; margin-bottom: 6px; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 4px 0; flex-wrap: wrap; }
+  .mono { font-family: ui-monospace, Consolas, monospace; }
+  .chip { display: inline-block; padding: 0 7px; border-radius: 999px; border: 1px solid #2c2f38; color: #a9b0c0; font-size: 12px; }
+  .muted { color: #8b90a0; font-size: 12px; }
+  .btn { background: #1d2029; color: #dfe3ee; border: 1px solid #2c303b; border-radius: 7px; padding: 3px 10px; cursor: pointer; font-size: 12px; }
+  .btn:hover { background: #262a35; }
+  .input, select { background: #0f1115; color: #e6e6e6; border: 1px solid #2c303b; border-radius: 7px; padding: 4px 8px; font-size: 12px; }
+  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; }
+  .backdrop.show { display: flex; }
+  .dialog { width: min(680px, 92vw); background: #14161c; border: 1px solid #2c303b; border-radius: 12px; padding: 16px 18px; }
+  .ok { color: #65d69a; } .bad { color: #ff7b7b; } .warn { color: #ffcc66; }
+  pre { white-space: pre-wrap; max-height: 180px; overflow: auto; background: #0f1115; border: 1px solid #22242b; border-radius: 8px; padding: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <span class="title">跨端对话 · <b>3</b> 对端 / <b>8</b> 模式（profile 声明） / <b>3</b> 链路</span>
+    <button class="btn">刷新</button>
+  </div>
+
+  <div class="group">
+    <div class="label">对端</div>
+    <div class="row"><span class="mono" style="min-width:120px">self</span><span class="mono">本端（跨会话）</span><span class="chip">本端</span><span class="chip">无需令牌</span></div>
+    <div class="row"><span class="mono" style="min-width:120px">longer</span><span class="mono">http://127.0.0.1:3090</span><span class="chip">配置</span><span class="chip">TOKEN-…</span></div>
+    <div class="row"><span class="mono" style="min-width:120px">alpha</span><span class="mono">http://127.0.0.1:45183</span><span class="chip">发现</span><span class="chip">TOKEN-…</span></div>
+  </div>
+
+  <div class="group">
+    <div class="label">模式（来源：profile 声明 · 自动识别）</div>
+    <div class="row" id="modes"></div>
+  </div>
+
+  <div class="group">
+    <div class="label">固定链路</div>
+    <div class="row">
+      <span class="mono" style="min-width:140px">review-loop</span><span class="chip">2 步</span><span class="chip">默认 fmd-fast</span>
+      <span class="muted">写 → 审 → 不过就返工</span>
+      <button class="btn" onclick="run('review-loop')">运行</button>
+    </div>
+    <div class="row">
+      <span class="mono" style="min-width:140px">relay</span><span class="chip">3 步</span>
+      <span class="muted">本端起草 → 加工 → 收口</span>
+      <button class="btn" onclick="run('relay')">运行</button>
+    </div>
+    <div class="row">
+      <span class="muted">模板：</span>
+      <button class="btn">+review-loop</button><button class="btn">+relay</button><button class="btn">+quick-ask</button>
+      <input class="input" placeholder="运行输入（{input}）" style="min-width:160px">
+      <button class="btn">导出</button><button class="btn">导入…</button><button class="btn">确认导入</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="label">新建链路（A → B → C）</div>
+    <div class="row">
+      <input class="input" placeholder="链路名" style="width:150px">
+      <button class="btn">+ 加一行</button>
+      <input class="input" placeholder="本次发送的 {input}（可留空）" style="min-width:170px">
+      <button class="btn">保存链路</button>
+      <button class="btn" onclick="run('新链路')">保存并发送</button>
+    </div>
+    <div class="row">
+      <span class="chip">1</span>
+      <select class="input"><option>self ·（本端 / 跨会话）</option><option>longer · 127.0.0.1:3090</option></select>
+      <button class="btn" title="自动识别 / 手动填写 切换">自动</button>
+      <select class="input"><option>（对端默认）</option><option>★ fmd-entry</option><option>fmd-review</option></select>
+      <select class="input"><option>自动（按模式）</option><option>入口 {input}</option><option>上一步 {prev}</option></select>
+    </div>
+    <div class="row">
+      <span class="chip">2</span>
+      <select class="input"><option>self ·（本端 / 跨会话）</option><option>longer · 127.0.0.1:3090</option></select>
+      <button class="btn" title="自动识别 / 手动填写 切换">手动</button>
+      <input class="input" placeholder="手动填模式 id" value="fmd-review" style="min-width:120px">
+      <select class="input"><option>自动（按模式）</option><option>入口 {input}</option><option>上一步 {prev}</option></select>
+    </div>
+  </div>
+</div>
+
+<div class="backdrop" id="dlg">
+  <div class="dialog">
+    <div class="head"><span class="title" id="dlgTitle">链路结果</span><button class="btn" onclick="closeDlg()">关闭</button></div>
+    <div class="muted" id="dlgMeta"></div>
+    <div id="dlgSteps" style="margin:10px 0"></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><span class="muted" id="dlgLen"></span><button class="btn">复制</button></div>
+    <pre id="dlgFinal"></pre>
+  </div>
+</div>
+
+<script>
+  const MODES = ['★ fmd-entry','fmd-collect','fmd-distill','fmd-merge','fmd-forge','fmd-fast','fmd-review','fmd-director']
+  document.getElementById('modes').innerHTML = MODES.map((m) => `<span class="chip">${m}</span>`).join('')
+
+  function run(name) {
+    document.getElementById('dlg').classList.add('show')
+    document.getElementById('dlgTitle').textContent = '链路结果 · ' + name
+    document.getElementById('dlgMeta').textContent = '完成 · 3 步 · 12s'
+    document.getElementById('dlgSteps').innerHTML = [
+      ['1','self','fmd-entry','ok','1820ms · 412B'],
+      ['2','longer','fmd-review','ok','5310ms · 960B'],
+      ['1','self','fmd-entry','rework','2100ms · 508B'],
+      ['3','self','fmd-fast','ok','2790ms · 733B'],
+    ].map(([i,p,m,s,t]) => `<div class="row"><span class="chip">${i}</span><span class="chip">${p}</span><span class="chip">${m}</span><span class="chip ${s==='ok'?'ok':s==='rework'?'warn':'bad'}">${s}</span><span class="muted">${t}</span></div>`).join('')
+    document.getElementById('dlgFinal').textContent = '最终：NEXT\n（示例）返工一次后通过，第三步收口完成。'\n    document.getElementById('dlgLen').textContent = '最终结果 · ' + document.getElementById('dlgFinal').textContent.length + ' 字'
+  }
+  function closeDlg() { document.getElementById('dlg').classList.remove('show') }
+</script>
+</body>
+</html>

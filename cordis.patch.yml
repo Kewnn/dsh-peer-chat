@@ -1,0 +1,12 @@
+# dsh-peer-chat bundle patch —— 把插件挂进 DSH 配置树。
+#
+# 契约（照 dsh-pet/dsh-meme 的商城写法）：
+#   - id 必须全局唯一且与包名一致（dsh-peer-chat）；商城预检按这一行抓 entry ID，
+#     所以 `id: ...` 那行不能带行尾注释。
+#   - name 必须是实际包名：cordis 按 name import 包。
+#   - 装载后注册四个工具：peer_token / peer_ask / peer_steer / peer_tail。
+# 配置（peersFile / token / localHome / tokenCommand）由用户在自己的 profile 层覆盖，
+# 这里不写死任何机器相关路径。
+- insert:
+    - id: dsh-peer-chat
+      name: dsh-peer-chat

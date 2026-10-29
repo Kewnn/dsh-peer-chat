@@ -1,0 +1,22 @@
+# 依赖与构建产物
+node_modules/
+.pnpm-store/
+dist/
+
+# 运行时数据（本机私有）
+*.log
+create.log
+peer-chat/
+chains.json
+
+# 编辑器/系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 临时
+*.tmp
+*.bak
+*.bak-*
+_scratch/
