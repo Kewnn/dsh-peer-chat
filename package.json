@@ -28,7 +28,8 @@
     "README.zh-CN.md",
     "INSTALL.md",
     "INSTALL.zh-CN.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "dsh": {
     "bundle": {
