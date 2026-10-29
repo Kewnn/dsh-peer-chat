@@ -1,6 +1,6 @@
 # dsh-peer-chat · 包内测试
 
-把原来散在 `E:\dshsystem\caches\temp\peer-probe\` 的 13 套临时 harness 收成了 5 套按主题拆分的正式测试。
+把原来散在临时目录里的 13 套临时 harness 收成了 5 套按主题拆分的正式测试。
 零依赖（只用 node 内置模块与 node:test 之外的自建 runner），不需要装任何东西。
 
 要求 Node >= 22.15（插件本身要用 `zlib` 的 zstd 解压）。
@@ -8,7 +8,7 @@
 ## 快速开始
 
 ```powershell
-cd E:\dshsystem\fmd\plugins\dsh-peer-chat
+cd <repo>
 node test/run-all.mjs
 ```
 
@@ -56,7 +56,7 @@ test/
 ## fixture 约定（改测试前先读）
 
 1. **临时目录**：`makeTempRoot(label)` 在 `os.tmpdir()` 下建一次性目录，`runSuite` 结束时 `cleanupTempRoots()` 递归删除。
-   **不要**往包目录、用户 home、`E:\dshlaw\...` 写任何东西。
+   **不要**往包目录、用户 home、`<other dirs>` 写任何东西。
 2. **环境隔离**：`runSuite` 开头调用 `sanitizeEnv()`，删掉 `PEER_TOKEN`、`PEER_CHAT_PEERS`、`DSH_HOME`、`DSH_PROFILE_DIR`。
    实测踩过：不删 `DSH_PROFILE_DIR` 时，「读 profile 识别模式」这条回退路径会认出测试机上的 8 个真实模式。
    要测这些变量的用例，自己 `process.env.X = …`，并在 `finally` 里删掉。
@@ -104,7 +104,7 @@ check('缓存回落：只报前缀', value.sourceKind === 'cache' && value.token
 复现：
 
 ```powershell
-$env:NODE_V8_COVERAGE='E:\dshsystem\caches\temp\v8cov-peer-chat'
+$env:NODE_V8_COVERAGE='<temp dir>/v8cov-peer-chat'
 node test/run-all.mjs
 # 再解析目录下 *.json：按 script.url 以 /dsh-peer-chat/index.js 结尾过滤，functionName + ranges[0].count
 ```

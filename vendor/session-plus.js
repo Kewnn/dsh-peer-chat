@@ -10,8 +10,14 @@
 import { randomUUID } from 'node:crypto'
 import { appendFileSync } from 'node:fs'
 
-const DEBUG_LOG = 'E:\\dshlonger\\dsh-home\\_tmp\\session-plus.log'
-function debug(obj) { try { appendFileSync(DEBUG_LOG, JSON.stringify({ t: new Date().toISOString(), ...obj }) + '\n') } catch {} }
+const DEBUG_LOG = (() => {
+  const home = process.env.DSH_HOME ?? ''
+  return home === '' ? '' : home + '\\peer-chat\\session-plus.log'
+})()
+function debug(obj) {
+  if (DEBUG_LOG === '') return
+  try { appendFileSync(DEBUG_LOG, JSON.stringify({ t: new Date().toISOString(), ...obj }) + '\n') } catch {}
+}
 import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'

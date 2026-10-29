@@ -10,7 +10,7 @@
  *   remote（默认）：HTTP 登录取 cookie → 对端 session/create → session/prompt → 轮询对端会话日志。
  *   本机会话（建/投/插）归 dsh-session-tools / dsh-session-plus，本插件不碰。
  *
- * token 识别优先级（移植自 E:\dshsystem\fmd\pipeline\tools\peer-chat.mjs，已实测）：
+ * token 识别优先级：
  *   1) config.token / PEER_TOKEN 环境变量
  *   2) <peerHome>/*.log 里最后一处 `dsh web: http://127.0.0.1:P/?token=XXX`
  *   3) peers.json 里缓存的 token
@@ -74,7 +74,6 @@ const TAIL_LIMIT = 1_200
  *   1) config.peersFile
  *   2) 环境变量 PEER_CHAT_PEERS
  *   3) <DSH_HOME>/peer-chat/peers.json（推荐，跟着用户 home 走）
- *   4) 本机历史位置 E:\dshlaw\tools\dsh-peer\peers.json（存在才用）
  * 都没命中时返回 3) 的路径，用于报错提示。
  */
 /**
@@ -114,10 +113,8 @@ function peersFileOf(config) {
 
 function peersFileCandidates(config) {
   const home = runtimePaths(config).home
-  return [
-    ...(home === '' ? [] : [join(home, 'peer-chat', 'peers.json')]),
-    'E:\\dshlaw\\tools\\dsh-peer\\peers.json',
-  ]
+  if (home === '') return []
+  return [join(home, 'peer-chat', 'peers.json')]
 }
 
 /** 显式令牌（最高优先级）：config.token 等同旧的 --token，其次 PEER_TOKEN。 */
