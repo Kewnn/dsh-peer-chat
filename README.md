@@ -1,10 +1,14 @@
 # dsh-peer-chat
 
+**English** ｜ [中文](./README.zh-CN.md)　·　Install: [English](./INSTALL.md) ｜ [中文](./INSTALL.zh-CN.md)　·　License: Apache-2.0
+
 Talk to another DSH instance end to end: **the plugin discovers the peer's web token on its own**, logs in for a
 cookie, creates or picks a session, delivers the message, then polls the peer's session log for the reply.
-For a local target (`self`) it reuses the existing session tooling instead of re-implementing it.
+Locally it acts on the current session (`self`) — no extra process, no extra copy of the session machinery.
 
-License: **Apache-2.0** (see [LICENSE](./LICENSE))　｜　Install: [INSTALL.md](./INSTALL.md)　｜　[中文说明](./README.zh-CN.md)
+Peers are addressed by **port** (`peer: 3090`), which is stable and needs no alias bookkeeping.
+
+---
 
 ---
 
@@ -53,18 +57,18 @@ without it the plugin falls back to the cached token.
 | `peer_chain({ name \| steps, input?, mode? })` | Multi-hop chain, `{prev}` carries the previous reply | per step |
 | `peer_tail({ peer, sessionId, n? })` | Read the last n assistant messages of a peer session | — |
 
-## 4. Relationship with session-tools / session-plus
+## 4. Session tooling included
 
-No duplicated wheels: two implementations are vendored in this repo.
+The plugin is self-contained: installing it gives you both the session layer and the cross-instance layer.
 
-```
-vendor/session-tools/…    local session tools (session_create / send / wait / list_sessions)
-vendor/session-plus.js    create a session by preset (session_spawn) + steer (session_steer)
-```
+| Layer | Tools |
+|---|---|
+| Local sessions | `session_create` · `session_send` · `session_wait` · `list_sessions` |
+| Presets & steering | `session_spawn` (create by preset) · `session_steer` (talk into a running turn) |
+| Cross-instance | `peer_token` · `peer_list` · `peer_modes` · `peer_chains` · `peer_ask` · `peer_send` · `peer_steer` · `peer_chain` · `peer_tail` |
 
-Installing this plugin gives you those tools **plus** every `peer_*`. If you also install a standalone
-`dsh-session-plus`, add `config: { mergeSessionPlus: false }` to this plugin's row — otherwise
-`session_spawn` is registered twice.
+If another plugin in your profile already provides `session_spawn`, set `config: { mergeSessionPlus: false }`
+on this plugin's row to avoid a duplicate registration.
 
 ## 5. Where the token comes from
 

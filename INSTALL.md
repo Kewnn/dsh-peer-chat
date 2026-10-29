@@ -18,8 +18,7 @@ Chinese: [INSTALL.zh-CN.md](./INSTALL.zh-CN.md)　｜　Overview: [README.md](./
 ```
 <profile>\local-plugins\dsh-peer-chat\
   index.js  client.js  package.json  cordis.patch.yml  icon.svg
-  vendor\session-tools\…      ← local session tools (vendored)
-  vendor\session-plus.js      ← session_spawn / session_steer (vendored)
+  vendor\…                    ← built-in session layer and preset/steer layer
   README.md  INSTALL.md  LICENSE
 ```
 
@@ -64,8 +63,8 @@ Append to `<profile>\cordis.patch.yml`:
       name: dsh-peer-chat
 ```
 
-> If you also run a standalone `dsh-session-plus`, add `config: { mergeSessionPlus: false }` to this row,
-> otherwise `session_spawn` is registered twice.
+> If another plugin in your profile already provides `session_spawn`, add
+> `config: { mergeSessionPlus: false }` to this row — otherwise the tool is registered twice.
 
 ## 4. Restart
 
@@ -89,8 +88,8 @@ Plugin modules load at startup — editing files (or tool schemas) requires a re
         peersFile: E:\dshlaw\tools\dsh-peer\peers.json   # peer table
         localHome: E:\dshsystem\dsh-home                 # this instance's DSH_HOME (token discovery)
         defaultWorkspace: E:\dshsystem\Documents\deepseek-harness\default-workspace
-        mergeSessionTools: true                          # mount vendor/session-tools
-        mergeSessionPlus: true                           # mount vendor/session-plus
+        mergeSessionTools: true                          # mount the built-in local session tools
+        mergeSessionPlus: true                           # mount the built-in preset/steer layer
         discoverPorts: [3080, 3090, 3100, 3130]          # optional: scan this list instead of 3000-3200
 ```
 
@@ -128,7 +127,7 @@ Remove-Item -Recurse -Force .\node_modules\dsh-peer-chat
 | Symptom | Cause |
 |---|---|
 | `did not activate / import failed` | linked from outside the profile, or dependencies not installed |
-| `session_spawn` registered twice | a standalone `dsh-session-plus` is installed → set `mergeSessionPlus: false` |
+| `session_spawn` registered twice | another plugin already provides it → set `mergeSessionPlus: false` |
 | HTTP 401 from a peer | stale token — let the peer log its startup, or pass `PEER_TOKEN` |
 | Whole web UI breaks, `client bundle not found` | `package.json` `files` list is missing `client.js` |
 | Sessions land in `sessions\_no-cwd`, UI says `session/not-found` | the session was created without a cwd (this plugin always passes one) |

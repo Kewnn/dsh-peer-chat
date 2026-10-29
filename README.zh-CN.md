@@ -1,9 +1,11 @@
 # dsh-peer-chat · 中文说明
 
-跨 DSH 实例对话插件：**自动识别对端 token** → 登录取 cookie → 建/选会话 → 投递消息 → 轮询会话日志取回回复。
-本机目标（`self`）直接复用已有的会话能力，不另起一套。
+[English](./README.md) ｜ **中文**　·　安装：[中文](./INSTALL.zh-CN.md) ｜ [English](./INSTALL.md)　·　许可证：Apache-2.0
 
-许可证：**Apache-2.0**（见 [LICENSE](./LICENSE)）　｜　安装：[INSTALL.zh-CN.md](./INSTALL.zh-CN.md)
+跨 DSH 实例对话插件：**自动识别对端 token** → 登录取 cookie → 建/选会话 → 投递消息 → 轮询会话日志取回回复。
+本机目标（`self`）直接作用于当前会话，不需要另起进程、也不需要另一套会话实现。
+
+对端一律用**端口**标识（`peer: 3090`），稳定、不用维护别名。
 
 ---
 
@@ -50,17 +52,18 @@ peer_ask({ peer: 'self', message: '…' })            // 本端当前会话
 | `peer_chain({ name \| steps, input?, mode? })` | 多跳链路，`{prev}` 传上一步 | 逐步 |
 | `peer_tail({ peer, sessionId, n? })` | 读对端会话最近 n 条正文 | — |
 
-## 4. 与 session-tools / session-plus 的关系
+## 4. 自带的会话工具
 
-本插件不重复造轮子，仓库里已经 vendor 了两套：
+插件是自足的：装这一个，会话层和跨端层都有了。
 
-```
-vendor/session-tools/…    本地会话工具（session_create / send / wait / list_sessions）
-vendor/session-plus.js    按预设建会话（session_spawn）+ 运行中插话（session_steer）
-```
+| 层 | 工具 |
+|---|---|
+| 本地会话 | `session_create` · `session_send` · `session_wait` · `list_sessions` |
+| 预设与插话 | `session_spawn`（按预设建会话）· `session_steer`（插到运行中的回合） |
+| 跨实例 | `peer_token` · `peer_list` · `peer_modes` · `peer_chains` · `peer_ask` · `peer_send` · `peer_steer` · `peer_chain` · `peer_tail` |
 
-装一个插件 = 同时得到上面这些 + `peer_*`。若你又单独装了 `dsh-session-plus`，
-给本插件那行加 `config: { mergeSessionPlus: false }`，否则 `session_spawn` 会重复注册。
+如果 profile 里已有别的插件提供 `session_spawn`，给本插件那行加 `config: { mergeSessionPlus: false }`，
+避免重复注册。
 
 ## 5. token 从哪来
 
