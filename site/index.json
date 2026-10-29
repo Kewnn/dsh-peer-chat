@@ -26,13 +26,13 @@
       "icon": "https://raw.githubusercontent.com/Kewnn/dsh-peer-chat/main/icon.svg",
       "versions": [
         {
-          "version": "2.3.0",
-          "publishTimestamp": 1793251705,
+          "version": "2.3.1",
+          "publishTimestamp": 1793252628,
           "license": "Apache-2.0",
           "source": {
             "type": "git",
             "url": "https://github.com/Kewnn/dsh-peer-chat",
-            "commit": "8ea4ea2dce6a841a691d5b6a29ad2d21c5d50733",
+            "commit": "a649fdabd43a82f875e545c7ff35e1c49a0f4fe9",
             "directory": "."
           },
           "engines": {
